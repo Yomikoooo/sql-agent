@@ -3,10 +3,10 @@
 .env
 .env.*
 
-# Experiment output: 26M, and not one byte of it is used at run time.
+# Experiment output. Not one byte of it is read at run time; it is evidence for
+# the numbers in the README, which is a repository concern, not an image one.
 results
 artifacts
-triage
 
 # The database is rebuilt at build time from the fixed seed, never copied
 # from the host.

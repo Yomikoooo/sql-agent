@@ -233,6 +233,7 @@ All of it lives in `src/sql_agent/`.
 ```
 paths.py             resolves the checkout root once; everything else asks it
 server.py            HTTP, SSE, cancellation, approvals
+  run_store.py       persists a run's configuration next to its checkpoint
   agent.py           the hand-written loop
   agent_graph.py     the same loop as a LangGraph graph, kept field-identical
     tools.py         get_schema / run_sql / submit_answer / export_csv
@@ -243,9 +244,25 @@ server.py            HTTP, SSE, cancellation, approvals
       rate_limit.py  token bucket
 runner.py            runs the task set concurrently, records trajectories
   verify.py          grades a run: result comparison and behaviour checks
+  redact.py          strips PII on the way to disk
 retrieval.py         word overlap and vector search over the task pool
+  embedding.py       vectors, behind an interface the word-overlap arm ignores
 tracing.py           span tree, cost attribution
 ```
+
+Three more are entry points rather than layers -- nothing imports them, they are
+run to produce the inputs everything else consumes:
+
+```
+seed_db.py           generates the database from a fixed seed
+build_tasks.py       generates tasks/dev.json and tasks/test.json
+check_tasks.py       the task-set self-check that guards them
+```
+
+🔴 **`build_tasks.py` is the largest file in the repository**, which is the right
+shape for this project: the task set decides what every number here means, so it
+gets more scrutiny than the agent does. `check_tasks.py` exists because a task set
+that nothing checks is a measuring instrument nobody calibrated.
 
 The files worth reading first, in order:
 
@@ -448,12 +465,18 @@ quoted above are not affected: every one of them traces to a run summary under
 
 ---
 
-## What comes next
+## What this points to
 
-The bottleneck is located: four prompt techniques failed against one class of
-error, so the next step is not another prompt.
+Four prompt techniques failed against the same class of error, which locates the
+ceiling: on this task, with this model, the remaining failures are not the kind a
+better prompt fixes.
 
-The complete `messages` trajectories written to `results/*.jsonl` are the raw
-material for rejection sampling. **The evaluation harness and the training-data
-pipeline are the same object**, which is why supervised fine-tuning on this
-same task is the next stage rather than a separate project.
+That conclusion is only worth as much as the harness that produced it -- and the
+harness has a second use. It records the full `messages` trajectory of every run,
+which is exactly the raw material a rejection-sampling pipeline consumes. **The
+evaluation harness and the training-data pipeline are the same object**: the
+records that decide whether a change helped are the records you would fine-tune
+on.
+
+*(Trajectory files are large and stay out of version control. `results/` ships the
+per-run summaries that every number above is drawn from.)*
