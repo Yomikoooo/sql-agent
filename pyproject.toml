@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sql-agent"
+version = "0.1.0"
+description = "A SQL data analysis agent, and the evaluation harness that says whether it improved"
+requires-python = ">=3.11"
+dynamic = ["dependencies"]
+
+[project.scripts]
+# The four commands the README tells a reader to run. They are entry points
+# rather than loose files so that they keep working from any directory once the
+# package is installed -- which is the whole reason the modules moved under
+# src/.
+sql-agent-serve = "sql_agent.server:main"
+sql-agent-eval = "sql_agent.runner:main"
+sql-agent-seed = "sql_agent.seed_db:main"
+sql-agent-check-tasks = "sql_agent.check_tasks:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,59 @@
+[
+  {
+    "id": "sql_024",
+    "question": "Which customers have spent more than twice the average customer's total spend? Show their names and how much they spent. Include orders of every status.",
+    "check": "result",
+    "difficulty": "hard",
+    "tags": [
+      "nested_aggregate",
+      "subquery",
+      "join2"
+    ],
+    "gold_sql": "SELECT u.name, ROUND(t.spent, 2) FROM ( SELECT o.user_id, SUM(oi.quantity * oi.unit_price) AS spent FROM orders o JOIN order_items oi ON oi.order_id = o.id GROUP BY o.user_id) t JOIN users u ON u.id = t.user_id WHERE t.spent > 2 * (SELECT AVG(s) FROM ( SELECT SUM(oi.quantity * oi.unit_price) AS s FROM orders o JOIN order_items oi ON oi.order_id = o.id GROUP BY o.user_id))",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "sql_117",
+    "question": "For each product, show the product name and the number of distinct users who have ordered it in completed orders. Only include products that have been ordered by at least 3 distinct users.",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "join",
+      "aggregation",
+      "having"
+    ],
+    "gold_sql": "SELECT p.name, COUNT(DISTINCT o.user_id) AS distinct_users FROM products p JOIN order_items oi ON oi.product_id = p.id JOIN orders o ON o.id = oi.order_id WHERE o.status = 'completed' GROUP BY p.id, p.name HAVING COUNT(DISTINCT o.user_id) >= 3 ORDER BY distinct_users DESC, p.name ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "sql_128",
+    "question": "Show the product name and the total revenue from completed orders for each product in the Electronics category. Only include products that have been ordered at least once.",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "join",
+      "aggregation",
+      "filter",
+      "revenue"
+    ],
+    "gold_sql": "SELECT p.name AS product_name, SUM(oi.quantity * oi.unit_price) AS total_revenue FROM products p JOIN order_items oi ON p.id = oi.product_id JOIN orders o ON oi.order_id = o.id WHERE p.category = 'Electronics' AND o.status = 'completed' GROUP BY p.id, p.name ORDER BY total_revenue DESC, p.name ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "sql_144",
+    "question": "What is the total revenue from completed orders placed in the month of March 2025? Show the total as a single number rounded to 2 decimal places.",
+    "check": "result",
+    "difficulty": "easy",
+    "tags": [
+      "aggregation",
+      "date filter",
+      "status filter"
+    ],
+    "gold_sql": "SELECT ROUND(SUM(oi.quantity * oi.unit_price), 2) AS total_revenue FROM orders o JOIN order_items oi ON o.id = oi.order_id WHERE o.status = 'completed' AND o.order_date LIKE '2025-03-%'",
+    "ordered": false,
+    "allow_empty": false
+  }
+]

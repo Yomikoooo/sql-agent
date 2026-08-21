@@ -1,0 +1,59 @@
+{
+  "n_records": 10,
+  "n_tasks": 10,
+  "success_rate": 0.8,
+  "by_difficulty": {
+    "hard": 0.6666666666666666,
+    "easy": 0.6666666666666666,
+    "medium": 1.0
+  },
+  "by_tag": {
+    "two-table-join": 1.0,
+    "subquery": 0.5,
+    "having": 0.6666666666666666,
+    "date-function": 1.0,
+    "join": 0.8,
+    "distinct": 0.6666666666666666,
+    "filter": 1.0,
+    "group by": 0.6666666666666666,
+    "date extraction": 1.0,
+    "sorting": 1.0,
+    "aggregation": 0.8,
+    "limit": 1.0,
+    "tie-breaker": 1.0,
+    "group": 1.0,
+    "date filter": 1.0,
+    "status filter": 1.0,
+    "date": 1.0
+  },
+  "stop_reasons": {
+    "done": 10
+  },
+  "always_pass": [
+    "sql_008",
+    "sql_103",
+    "sql_108",
+    "sql_114",
+    "sql_115",
+    "sql_139",
+    "sql_141",
+    "sql_144"
+  ],
+  "always_fail": [
+    "sql_023",
+    "sql_143"
+  ],
+  "flaky": [],
+  "flaky_rate": 0.0,
+  "loose_count": 0,
+  "error_count": 0,
+  "success_rate_completed": 0.8,
+  "fallback_count": 1,
+  "truncated_runs": 0,
+  "turns_mean": 2.3,
+  "tool_calls_mean": 1.3,
+  "in_tokens_mean": 3743.6,
+  "in_tokens_p95": 4860,
+  "elapsed_mean": 70.13492092930028,
+  "elapsed_p95": 111.9371083340011
+}

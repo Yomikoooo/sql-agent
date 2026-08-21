@@ -1,0 +1,70 @@
+{
+  "n_records": 45,
+  "n_tasks": 15,
+  "success_rate": 0.4666666666666667,
+  "by_difficulty": {
+    "easy": 0.4,
+    "hard": 0.5,
+    "medium": 0.5
+  },
+  "by_tag": {
+    "left-join": 0.0,
+    "filter": 0.5,
+    "null": 0.0,
+    "join": 0.5714285714285714,
+    "distinct": 0.25,
+    "single-table": 0.0,
+    "sort": 0.0,
+    "limit": 0.5,
+    "having": 0.25,
+    "subquery": 0.5,
+    "aggregation": 0.42857142857142855,
+    "sorting": 1.0,
+    "tie-breaker": 1.0,
+    "nested_aggregate": 1.0,
+    "join2": 1.0,
+    "distinct count": 1.0,
+    "join3": 1.0,
+    "aggregate": 1.0,
+    "unit_price": 1.0,
+    "date filter": 1.0,
+    "status filter": 1.0,
+    "date": 0.0
+  },
+  "stop_reasons": {
+    "done": 42,
+    "max_turns": 3
+  },
+  "always_pass": [
+    "sql_014",
+    "sql_024",
+    "sql_108",
+    "sql_114",
+    "sql_121",
+    "sql_144",
+    "sql_146"
+  ],
+  "always_fail": [
+    "sql_002",
+    "sql_023",
+    "sql_101",
+    "sql_110",
+    "sql_117",
+    "sql_122",
+    "sql_132",
+    "sql_139"
+  ],
+  "flaky": [],
+  "flaky_rate": 0.0,
+  "loose_count": 0,
+  "error_count": 0,
+  "success_rate_completed": 0.4666666666666667,
+  "fallback_count": 15,
+  "truncated_runs": 0,
+  "turns_mean": 3.1333333333333333,
+  "tool_calls_mean": 2.2,
+  "in_tokens_mean": 4325.933333333333,
+  "in_tokens_p95": 12600,
+  "elapsed_mean": 140.64777777962155,
+  "elapsed_p95": 353.10339608299546
+}

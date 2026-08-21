@@ -1,0 +1,51 @@
+name: tests
+
+# The fast layer: no money, no network, runs on every push. What it catches is
+# an unintended change in behaviour, not whether the model answers correctly --
+# that is the slow layer's job and it does not belong in CI.
+
+on:
+  push:
+    branches: [dev, main]      # dev is the working branch. With only main here
+                               # this never fires, and GitHub shows nothing at
+                               # all -- not red, not green, simply blank.
+  pull_request:                # run on PRs too, so breakage shows before merge
+
+jobs:
+  fast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"   # pin the minor version: this stops "CI went
+                                   # red and nobody touched the code" on the day
+                                   # 3.14 ships, while still taking security
+                                   # patches. Pinning the patch version instead
+                                   # makes runs slow or fail when the image does
+                                   # not carry that exact build.
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: install the package
+        run: pip install -e .
+
+      # This step cannot be skipped or moved later. data/*.db is gitignored and
+      # the data/ directory is not in git at all, so it is missing after a
+      # checkout. seed_db creates it with mkdir(parents=True).
+      - name: build the database
+        run: sql-agent-seed
+
+      # Order matters: the database first, then the self-check. check_tasks
+      # opens it with mode=ro, which reports "unable to open database file"
+      # honestly, where a default connection would silently create an empty one.
+      - name: self-check the task set
+        run: sql-agent-check-tasks
+
+      # -rs prints skipped tests and the reason. The Ollama test in
+      # tests/test_verify.py always skips in CI, and a skip does not stop the
+      # run being green -- without -rs, "tested" and "not tested" are the same
+      # colour here.
+      - name: run the tests
+        run: python -m pytest -q -rs

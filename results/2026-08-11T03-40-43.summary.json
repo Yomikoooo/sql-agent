@@ -1,0 +1,38 @@
+{
+  "n_records": 5,
+  "n_tasks": 5,
+  "success_rate": 1.0,
+  "by_difficulty": {
+    "easy": 1.0,
+    "hard": 1.0
+  },
+  "by_tag": {
+    "count": 1.0,
+    "filter": 1.0,
+    "sort": 1.0,
+    "limit": 1.0,
+    "out_of_scope": 1.0,
+    "behavior": 1.0
+  },
+  "stop_reasons": {
+    "done": 5
+  },
+  "always_pass": [
+    "sql_001",
+    "sql_002",
+    "sql_003",
+    "sql_004",
+    "sql_027"
+  ],
+  "always_fail": [],
+  "flaky": [],
+  "flaky_rate": 0.0,
+  "loose_count": 0,
+  "fallback_count": 1,
+  "turns_mean": 3.4,
+  "tool_calls_mean": 2.6,
+  "in_tokens_mean": 4319.6,
+  "in_tokens_p95": 5321,
+  "elapsed_mean": 5.119559449981898,
+  "elapsed_p95": 6.719777542166412
+}

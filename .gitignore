@@ -1,0 +1,45 @@
+# The database is generated; rebuild it with sql-agent-seed.
+data/*.db
+
+# Evaluation results. The trajectory jsonl files hold the complete messages and
+# get large, so they stay out of git. The summaries do go in, and deliberately:
+# every number quoted about this project has to be traceable to a run recorded
+# against a specific commit, otherwise "it improved by 8 points" cannot be
+# checked by anyone, including me. They are 744 bytes each and carry only task
+# ids and aggregates -- no questions, no gold SQL.
+results/**/*.jsonl
+!results/*.summary.json
+
+# Everything regenerable: checkpoints, exported files, logs, caches. One line,
+# because nothing under here is evidence. This is exactly why results/ is not
+# in here with them.
+artifacts/
+
+# Environment
+.venv/
+.env
+
+# Python, and the caches every tool leaves behind. None of it is input to
+# anything -- deleting the lot and rerunning reproduces it exactly.
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# macOS and editors
+.DS_Store
+.vscode/
+
+# Local state left behind by editor plugins. None of it is input to anything,
+# and one of the files is a session token for a localhost helper -- a 64-hex
+# blob in a repository looks like a leaked credential whether or not it is one.
+.superpowers/
+.claude/worktrees/
+
+
+# Reference implementations (answers to the fill-in-the-blank exercises).
+.answers/

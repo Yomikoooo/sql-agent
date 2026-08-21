@@ -1,0 +1,44 @@
+{
+  "n_records": 7,
+  "n_tasks": 7,
+  "success_rate": 0.42857142857142855,
+  "by_difficulty": {
+    "hard": 0.2,
+    "medium": 1.0
+  },
+  "by_tag": {
+    "out_of_scope": 0.0,
+    "behavior": 0.0,
+    "ambiguous": 0.0,
+    "empty_result": 1.0,
+    "count": 1.0,
+    "filter": 1.0,
+    "trap": 1.0,
+    "list_price": 1.0,
+    "join3": 1.0
+  },
+  "stop_reasons": {
+    "done": 7
+  },
+  "always_pass": [
+    "sql_029",
+    "sql_030",
+    "sql_031"
+  ],
+  "always_fail": [
+    "sql_025",
+    "sql_026",
+    "sql_027",
+    "sql_028"
+  ],
+  "flaky": [],
+  "flaky_rate": 0.0,
+  "loose_count": 0,
+  "fallback_count": 0,
+  "turns_mean": 4.714285714285714,
+  "tool_calls_mean": 4.428571428571429,
+  "in_tokens_mean": 6485.428571428572,
+  "in_tokens_p95": 9825,
+  "elapsed_mean": 7.486328922810832,
+  "elapsed_p95": 12.647300625219941
+}

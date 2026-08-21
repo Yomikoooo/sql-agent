@@ -1,0 +1,138 @@
+[
+  {
+    "id": "sql_132",
+    "question": "Show the names of the 2 products with the highest number of distinct users who have ordered them in completed orders. If two products have the same number of distinct users, list the one with the smaller product id first. Return the product name and the count of distinct users.",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "join",
+      "aggregation",
+      "limit",
+      "distinct"
+    ],
+    "gold_sql": "SELECT p.name, COUNT(DISTINCT o.user_id) AS user_count FROM products p JOIN order_items oi ON p.id = oi.product_id JOIN orders o ON oi.order_id = o.id WHERE o.status = 'completed' GROUP BY p.id, p.name ORDER BY user_count DESC, p.id ASC LIMIT 2",
+    "ordered": true,
+    "allow_empty": false
+  },
+  {
+    "id": "sql_130",
+    "question": "For each product, show the product name and the rank of its total quantity sold (across all orders, any status) among all products. Rank 1 for the highest total quantity. If two products have the same total quantity, give them the same rank and skip the next rank.",
+    "check": "result",
+    "difficulty": "hard",
+    "tags": [
+      "window function",
+      "rank",
+      "join",
+      "aggregation"
+    ],
+    "gold_sql": "SELECT p.name AS product_name, RANK() OVER (ORDER BY SUM(oi.quantity) DESC) AS quantity_rank FROM products p JOIN order_items oi ON p.id = oi.product_id GROUP BY p.id, p.name ORDER BY quantity_rank ASC, p.name ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "sql_002",
+    "question": "Show me the name and price of all the electronics we sell, most expensive first.",
+    "check": "result",
+    "difficulty": "easy",
+    "tags": [
+      "filter",
+      "sort"
+    ],
+    "gold_sql": "SELECT name, price FROM products WHERE category = 'Electronics' ORDER BY price DESC",
+    "ordered": true,
+    "allow_empty": false
+  },
+  {
+    "id": "sql_004",
+    "question": "What are the names and prices of our three most expensive products?",
+    "check": "result",
+    "difficulty": "easy",
+    "tags": [
+      "sort",
+      "limit"
+    ],
+    "gold_sql": "SELECT name, price FROM products ORDER BY price DESC LIMIT 3",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "sql_006",
+    "question": "For each city, how many users are there? Show the city and the count.",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "group"
+    ],
+    "gold_sql": "SELECT city, COUNT(*) AS n FROM users GROUP BY city",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "sql_007",
+    "question": "For each product category, how many products are there and what is the average price?",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "group",
+      "aggregate"
+    ],
+    "gold_sql": "SELECT category, COUNT(*) AS n, ROUND(AVG(price), 2) AS avg_price FROM products GROUP BY category",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "sql_008",
+    "question": "How many orders do we have in each status? Show the status and the count.",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "group"
+    ],
+    "gold_sql": "SELECT status, COUNT(*) AS n FROM orders GROUP BY status",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "sql_009",
+    "question": "On average, how many line items does an order contain?",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "group",
+      "subquery",
+      "aggregate"
+    ],
+    "gold_sql": "SELECT ROUND(AVG(item_count), 2) FROM ( SELECT order_id, COUNT(*) AS item_count FROM order_items GROUP BY order_id)",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "sql_011",
+    "question": "List the order id and the customer's name for the first 10 orders by order id.",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "join2",
+      "sort",
+      "limit"
+    ],
+    "gold_sql": "SELECT o.id, u.name FROM orders o JOIN users u ON o.user_id = u.id ORDER BY o.id LIMIT 10",
+    "ordered": true,
+    "allow_empty": false
+  },
+  {
+    "id": "sql_012",
+    "question": "Who are our five most frequent customers? Show the customer name and their order count. Break ties by customer name (A to Z).",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "join2",
+      "group",
+      "limit",
+      "tie_break"
+    ],
+    "gold_sql": "SELECT u.name, COUNT(*) AS order_count FROM orders o JOIN users u ON o.user_id = u.id GROUP BY u.id ORDER BY order_count DESC, u.name ASC LIMIT 5",
+    "ordered": false,
+    "allow_empty": false
+  }
+]

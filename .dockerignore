@@ -1,0 +1,29 @@
+# Secrets must never enter the image: images get distributed, so anything
+# inside one is public.
+.env
+.env.*
+
+# Experiment output: 26M, and not one byte of it is used at run time.
+results
+artifacts
+triage
+
+# The database is rebuilt at build time from the fixed seed, never copied
+# from the host.
+data/*.db
+
+# Caches and version control (.mypy_cache alone is 54M).
+.git
+.gitignore
+.mypy_cache
+.pytest_cache
+__pycache__
+**/__pycache__
+*.pyc
+
+# Local editor and tool state (.claude also holds a full worktree copy of the
+# source).
+.claude
+.superpowers
+.vscode
+.DS_Store

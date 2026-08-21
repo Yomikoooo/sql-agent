@@ -1,0 +1,362 @@
+[
+  {
+    "id": "test_501",
+    "question": "Show the names of users who signed up in 2024 and have placed at least one completed order. Return only the user names.",
+    "check": "result",
+    "difficulty": "easy",
+    "tags": [
+      "join",
+      "filter",
+      "distinct"
+    ],
+    "gold_sql": "SELECT DISTINCT u.name FROM users u JOIN orders o ON u.id = o.user_id WHERE u.signup_date LIKE '2024%' AND o.status = 'completed'",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "test_502",
+    "question": "Show the email address of every user who has placed an order containing the product named 'Laptop Pro 14'. Include orders of every status. Return only the email addresses.",
+    "check": "result",
+    "difficulty": "easy",
+    "tags": [
+      "join",
+      "filter",
+      "distinct"
+    ],
+    "gold_sql": "SELECT DISTINCT u.email FROM users u JOIN orders o ON u.id = o.user_id JOIN order_items oi ON o.id = oi.order_id JOIN products p ON oi.product_id = p.id WHERE p.name = 'Laptop Pro 14'",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "test_503",
+    "question": "For each city, show the city name and the total revenue from completed orders placed by users in that city. Only include cities with at least one completed order.",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "join",
+      "aggregation",
+      "group by",
+      "order by"
+    ],
+    "gold_sql": "SELECT u.city, ROUND(SUM(oi.quantity * oi.unit_price), 2) AS revenue FROM users u JOIN orders o ON u.id = o.user_id JOIN order_items oi ON o.id = oi.order_id WHERE o.status = 'completed' GROUP BY u.city HAVING COUNT(o.id) > 0 ORDER BY revenue DESC, u.city ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "test_504",
+    "question": "Show the product name and the rank of its total quantity sold (from completed orders only) among all products. Rank 1 for the highest total quantity. Only include products that have been ordered at least once in completed orders.",
+    "check": "result",
+    "difficulty": "hard",
+    "tags": [
+      "window function",
+      "join",
+      "aggregation"
+    ],
+    "gold_sql": "SELECT p.name, RANK() OVER (ORDER BY SUM(oi.quantity) DESC) AS rank FROM products p JOIN order_items oi ON p.id = oi.product_id JOIN orders o ON oi.order_id = o.id WHERE o.status = 'completed' GROUP BY p.id, p.name HAVING COUNT(oi.id) > 0 ORDER BY rank ASC, p.name ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "test_505",
+    "question": "Show the names and signup dates of users who signed up in 2025.",
+    "check": "result",
+    "difficulty": "easy",
+    "tags": [
+      "single-table",
+      "filter",
+      "ordering"
+    ],
+    "gold_sql": "SELECT name, signup_date FROM users WHERE signup_date >= '2025-01-01' AND signup_date < '2026-01-01' ORDER BY signup_date ASC, id ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "test_506",
+    "question": "Show the names of products that have been. Only include completed orders. Return product name and the number of distinct users who ordered it.",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "three-table-join",
+      "aggregation",
+      "having",
+      "ordering"
+    ],
+    "gold_sql": "SELECT p.name, COUNT(DISTINCT o.user_id) AS user_count FROM products p JOIN order_items oi ON p.id = oi.product_id JOIN orders o ON oi.order_id = o.id WHERE o.status = 'completed' GROUP BY p.id, p.name HAVING COUNT(DISTINCT o.user_id) >= 2 ORDER BY user_count DESC, p.id ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "test_507",
+    "question": "What is the total revenue from completed orders for each city? Show the city name and the revenue rounded to 2 decimal places. Only include cities that have at least one completed order.",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "three-table-join",
+      "aggregation",
+      "rounding",
+      "ordering"
+    ],
+    "gold_sql": "SELECT u.city, ROUND(SUM(oi.quantity * oi.unit_price), 2) AS revenue FROM users u JOIN orders o ON u.id = o.user_id JOIN order_items oi ON o.id = oi.order_id WHERE o.status = 'completed' GROUP BY u.city HAVING COUNT(o.id) > 0 ORDER BY revenue DESC, u.city ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "test_508",
+    "question": "Show the product name and the total quantity sold (from completed orders only) for each product, along with the difference between that total quantity and the average total quantity sold per product (from completed orders only). Round the difference to 2 decimal places. Only include products that have been ordered at least once in completed orders.",
+    "check": "result",
+    "difficulty": "hard",
+    "tags": [
+      "subquery",
+      "aggregation",
+      "correlated",
+      "ordering"
+    ],
+    "gold_sql": "SELECT p.name, SUM(oi.quantity) AS total_quantity, ROUND(SUM(oi.quantity) - (SELECT AVG(qty) FROM (SELECT SUM(oi2.quantity) AS qty FROM order_items oi2 JOIN orders o2 ON oi2.order_id = o2.id WHERE o2.status = 'completed' GROUP BY oi2.product_id) avg_qty), 2) AS diff_from_avg FROM products p JOIN order_items oi ON p.id = oi.product_id JOIN orders o ON oi.order_id = o.id WHERE o.status = 'completed' GROUP BY p.id, p.name ORDER BY diff_from_avg DESC, p.id ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "test_509",
+    "question": "Show the names and emails of users who live in Shanghai and have placed at least one order with status 'completed'. Return user name and email only.",
+    "check": "result",
+    "difficulty": "easy",
+    "tags": [
+      "join",
+      "filter",
+      "distinct"
+    ],
+    "gold_sql": "SELECT DISTINCT u.name, u.email FROM users u JOIN orders o ON u.id = o.user_id WHERE u.city = 'Shanghai' AND o.status = 'completed'",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "test_510",
+    "question": "For each product, show the product name and the total revenue (sum of quantity * unit_price) from orders of every status. Only include products that have been ordered at least once.",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "join",
+      "aggregation",
+      "group by",
+      "order by"
+    ],
+    "gold_sql": "SELECT p.name, SUM(oi.quantity * oi.unit_price) AS total_revenue FROM products p JOIN order_items oi ON p.id = oi.product_id GROUP BY p.id, p.name ORDER BY p.name ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "test_511",
+    "question": "Show the names of the 3 cities with the highest number of distinct users who have placed at least one completed order. If two cities have the same count, list the one with the smaller city name alphabetically first. Return city name and the count of distinct users.",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "join",
+      "aggregation",
+      "limit",
+      "order by"
+    ],
+    "gold_sql": "SELECT u.city, COUNT(DISTINCT u.id) AS user_count FROM users u JOIN orders o ON u.id = o.user_id WHERE o.status = 'completed' GROUP BY u.city ORDER BY user_count DESC, u.city ASC LIMIT 3",
+    "ordered": true,
+    "allow_empty": false
+  },
+  {
+    "id": "test_512",
+    "question": "Show the product name and the total revenue from completed orders for each product in the 'Electronics' category. Only include products that have been ordered at least once in completed orders. Round the revenue to 2 decimal places.",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "join",
+      "filter",
+      "aggregation",
+      "order by"
+    ],
+    "gold_sql": "SELECT p.name, ROUND(SUM(oi.quantity * oi.unit_price), 2) AS revenue FROM products p JOIN order_items oi ON p.id = oi.product_id JOIN orders o ON oi.order_id = o.id AND o.status = 'completed' WHERE p.category = 'Electronics' GROUP BY p.id, p.name HAVING SUM(oi.quantity) IS NOT NULL ORDER BY revenue DESC, p.id ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "test_513",
+    "question": "Show the names of users who have placed at least one order in 2025 but have not placed any order in 2024, and also have placed at least one order with status 'completed' in 2025. Return only the user names, ordered alphabetically.",
+    "check": "result",
+    "difficulty": "hard",
+    "tags": [
+      "subquery",
+      "exists",
+      "not exists",
+      "order by"
+    ],
+    "gold_sql": "SELECT DISTINCT u.name FROM users u WHERE EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id AND o.order_date LIKE '2025-%' AND o.status = 'completed') AND NOT EXISTS (SELECT 1 FROM orders o2 WHERE o2.user_id = u.id AND o2.order_date LIKE '2024-%') ORDER BY u.name ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "test_514",
+    "question": "Show the names of the 3 products with the highest list price. If two products have the same list price, list the one with the smaller product id first. Return product name and price.",
+    "check": "result",
+    "difficulty": "easy",
+    "tags": [
+      "single-table",
+      "limit",
+      "order-by",
+      "products"
+    ],
+    "gold_sql": "SELECT name, price FROM products ORDER BY price DESC, id ASC LIMIT 3",
+    "ordered": true,
+    "allow_empty": false
+  },
+  {
+    "id": "test_515",
+    "question": "For each product, show the product name and the total revenue from completed orders, but only for products that have been ordered at least once in completed orders and whose total revenue is above 5000. Round revenue to 2 decimal places.",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "three-table-join",
+      "aggregation",
+      "having",
+      "order-by"
+    ],
+    "gold_sql": "SELECT p.name, ROUND(SUM(oi.quantity * oi.unit_price), 2) AS revenue FROM products p JOIN order_items oi ON p.id = oi.product_id JOIN orders o ON oi.order_id = o.id WHERE o.status = 'completed' GROUP BY p.id, p.name HAVING SUM(oi.quantity * oi.unit_price) > 5000 ORDER BY revenue DESC, p.id ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "test_516",
+    "question": "Show the names of users who have placed at least one completed order that contains more than 5 total items (sum of quantity). Return only the user names, ordered alphabetically.",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "three-table-join",
+      "aggregation",
+      "having",
+      "distinct"
+    ],
+    "gold_sql": "SELECT DISTINCT u.name FROM users u JOIN orders o ON u.id = o.user_id JOIN order_items oi ON o.id = oi.order_id WHERE o.status = 'completed' GROUP BY u.id, u.name, o.id HAVING SUM(oi.quantity) > 5 ORDER BY u.name ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "test_517",
+    "question": "Show the product name and the number of distinct cities from which users have ordered that product, considering only completed orders. Only include products ordered from at least 2 different cities.",
+    "check": "result",
+    "difficulty": "hard",
+    "tags": [
+      "four-table-join",
+      "aggregation",
+      "having",
+      "distinct",
+      "order-by"
+    ],
+    "gold_sql": "SELECT p.name, COUNT(DISTINCT u.city) AS city_count FROM products p JOIN order_items oi ON p.id = oi.product_id JOIN orders o ON oi.order_id = o.id JOIN users u ON o.user_id = u.id WHERE o.status = 'completed' GROUP BY p.id, p.name HAVING COUNT(DISTINCT u.city) >= 2 ORDER BY city_count DESC, p.id ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "test_518",
+    "question": "Show the user name and the total quantity of items they have ordered in completed orders, but only for users whose total quantity is greater than the average total quantity per user (computed across all users who have at least one completed order). Round the average to 2 decimal places.",
+    "check": "result",
+    "difficulty": "hard",
+    "tags": [
+      "cte",
+      "subquery",
+      "aggregation",
+      "having-alternative",
+      "order-by"
+    ],
+    "gold_sql": "WITH user_quant AS (SELECT u.id, u.name, SUM(oi.quantity) AS total_qty FROM users u JOIN orders o ON u.id = o.user_id JOIN order_items oi ON o.id = oi.order_id WHERE o.status = 'completed' GROUP BY u.id, u.name), avg_qty AS (SELECT AVG(total_qty) AS avg_val FROM user_quant) SELECT uq.name, uq.total_qty FROM user_quant uq CROSS JOIN avg_qty aq WHERE uq.total_qty > aq.avg_val ORDER BY uq.total_qty DESC, uq.id ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "test_519",
+    "question": "Show the names and emails of users who have never placed any order.",
+    "check": "result",
+    "difficulty": "easy",
+    "tags": [
+      "join",
+      "left join",
+      "null check",
+      "ordering"
+    ],
+    "gold_sql": "SELECT u.name, u.email FROM users u LEFT JOIN orders o ON u.id = o.user_id WHERE o.id IS NULL ORDER BY u.signup_date ASC, u.id ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "test_520",
+    "question": "For each product, show the product name and the total quantity. Only include products that have been ordered at least once in completed orders. Show the percentage this quantity represents of the total quantity ordered across all products from completed orders, rounded to 2 decimal places.",
+    "check": "result",
+    "difficulty": "hard",
+    "tags": [
+      "join",
+      "aggregation",
+      "subquery",
+      "percentage",
+      "ordering"
+    ],
+    "gold_sql": "SELECT p.name, SUM(oi.quantity) AS total_qty, ROUND(100.0 * SUM(oi.quantity) / (SELECT SUM(quantity) FROM order_items oi2 JOIN orders o2 ON oi2.order_id = o2.id WHERE o2.status = 'completed'), 2) AS pct FROM products p JOIN order_items oi ON p.id = oi.product_id JOIN orders o ON oi.order_id = o.id WHERE o.status = 'completed' GROUP BY p.id, p.name ORDER BY pct DESC, p.id ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "test_521",
+    "question": "Show the names of users whose first completed order was in 2024. Return only the user names, ordered alphabetically.",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "subquery",
+      "min",
+      "date filtering",
+      "correlated subquery"
+    ],
+    "gold_sql": "SELECT u.name FROM users u WHERE (SELECT MIN(o.order_date) FROM orders o WHERE o.user_id = u.id AND o.status = 'completed') LIKE '2024%' ORDER BY u.name ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "test_522",
+    "question": "Show the product name and the total revenue from completed orders for the product with the highest total revenue. If two products have the same highest total revenue, list the one with the smaller product id first. Return product name and total revenue rounded to 2 decimal places.",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "join",
+      "aggregation",
+      "limit",
+      "ordering",
+      "revenue"
+    ],
+    "gold_sql": "SELECT p.name, ROUND(SUM(oi.quantity * oi.unit_price), 2) AS revenue FROM products p JOIN order_items oi ON p.id = oi.product_id JOIN orders o ON oi.order_id = o.id WHERE o.status = 'completed' GROUP BY p.id, p.name ORDER BY revenue DESC, p.id ASC LIMIT 1",
+    "ordered": true,
+    "allow_empty": false
+  },
+  {
+    "id": "test_523",
+    "question": "Show the names of users whose total spend from completed orders is above the average total spend per user (computed across all users who have at least one completed order). Round the average to 2 decimal places. Return user name and total spend rounded to 2 decimal places.",
+    "check": "result",
+    "difficulty": "hard",
+    "tags": [
+      "join",
+      "aggregation",
+      "subquery",
+      "having",
+      "average comparison"
+    ],
+    "gold_sql": "SELECT u.name, ROUND(SUM(oi.quantity * oi.unit_price), 2) AS total_spend FROM users u JOIN orders o ON u.id = o.user_id JOIN order_items oi ON o.id = oi.order_id WHERE o.status = 'completed' GROUP BY u.id, u.name HAVING SUM(oi.quantity * oi.unit_price) > (SELECT AVG(spend) FROM (SELECT SUM(oi2.quantity * oi2.unit_price) AS spend FROM orders o2 JOIN order_items oi2 ON o2.id = oi2.order_id WHERE o2.status = 'completed' GROUP BY o2.user_id) t) ORDER BY total_spend DESC, u.id ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "test_524",
+    "question": "Show the names of the 3 products with the highest total quantity ordered from completed orders. If two products have the same total quantity, list the one with the smaller product id first. Return product name and total quantity.",
+    "check": "result",
+    "difficulty": "easy",
+    "tags": [
+      "join",
+      "aggregation",
+      "limit",
+      "ordering"
+    ],
+    "gold_sql": "SELECT p.name, SUM(oi.quantity) AS total_qty FROM products p JOIN order_items oi ON p.id = oi.product_id JOIN orders o ON oi.order_id = o.id WHERE o.status = 'completed' GROUP BY p.id, p.name ORDER BY total_qty DESC, p.id ASC LIMIT 3",
+    "ordered": true,
+    "allow_empty": false
+  }
+]

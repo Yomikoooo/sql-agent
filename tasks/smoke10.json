@@ -1,0 +1,148 @@
+[
+  {
+    "id": "sql_144",
+    "question": "What is the total revenue from completed orders placed in the month of March 2025? Show the total as a single number rounded to 2 decimal places.",
+    "check": "result",
+    "difficulty": "easy",
+    "tags": [
+      "aggregation",
+      "date filter",
+      "status filter"
+    ],
+    "gold_sql": "SELECT ROUND(SUM(oi.quantity * oi.unit_price), 2) AS total_revenue FROM orders o JOIN order_items oi ON o.id = oi.order_id WHERE o.status = 'completed' AND o.order_date LIKE '2025-03-%'",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "sql_108",
+    "question": "Show the names of products in the Electronics category that have been ordered at least once. Return only the product names.",
+    "check": "result",
+    "difficulty": "easy",
+    "tags": [
+      "join",
+      "distinct",
+      "filter"
+    ],
+    "gold_sql": "SELECT DISTINCT p.name FROM products p JOIN order_items oi ON p.id = oi.product_id WHERE p.category = 'Electronics' ORDER BY p.name ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "sql_143",
+    "question": "For each product, show the product name and the total quantity ordered across all orders of any status. Only include products that have been ordered at least once.",
+    "check": "result",
+    "difficulty": "easy",
+    "tags": [
+      "aggregation",
+      "join",
+      "group by"
+    ],
+    "gold_sql": "SELECT p.name, SUM(oi.quantity) AS total_qty FROM products p JOIN order_items oi ON p.id = oi.product_id GROUP BY p.id, p.name ORDER BY total_qty DESC, p.name ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "sql_008",
+    "question": "How many orders do we have in each status? Show the status and the count.",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "group"
+    ],
+    "gold_sql": "SELECT status, COUNT(*) AS n FROM orders GROUP BY status",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "sql_114",
+    "question": "Show the names of the 3 products with the highest total revenue from completed orders. If two products have the same total revenue, list the one with the smaller product id first. Return the product name and the total revenue rounded to 2 decimal places.",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "join",
+      "aggregation",
+      "limit",
+      "sorting",
+      "filter",
+      "tie-breaker"
+    ],
+    "gold_sql": "SELECT p.name, ROUND(SUM(oi.unit_price * oi.quantity), 2) AS revenue FROM products p JOIN order_items oi ON p.id = oi.product_id JOIN orders o ON oi.order_id = o.id WHERE o.status = 'completed' GROUP BY p.id, p.name ORDER BY revenue DESC, p.id ASC LIMIT 3",
+    "ordered": true,
+    "allow_empty": false
+  },
+  {
+    "id": "sql_141",
+    "question": "For each product category, show the category and the number of distinct users who have ordered products in that category from completed orders. Only include categories with at least one such user.",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "join",
+      "aggregation",
+      "distinct",
+      "group by"
+    ],
+    "gold_sql": "SELECT p.category, COUNT(DISTINCT u.id) AS user_count FROM products p JOIN order_items oi ON p.id = oi.product_id JOIN orders o ON oi.order_id = o.id JOIN users u ON o.user_id = u.id WHERE o.status = 'completed' GROUP BY p.category HAVING user_count > 0 ORDER BY user_count DESC, p.category ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "sql_139",
+    "question": "For each month in 2024, show the month (as 'YYYY-MM') and the total revenue from completed orders placed in that month. Only include months that have at least one completed order.",
+    "check": "result",
+    "difficulty": "medium",
+    "tags": [
+      "date",
+      "aggregation",
+      "filter"
+    ],
+    "gold_sql": "SELECT strftime('%Y-%m', o.order_date) AS month, ROUND(SUM(oi.quantity * oi.unit_price), 2) AS revenue FROM orders o JOIN order_items oi ON o.id = oi.order_id WHERE o.status = 'completed' AND o.order_date LIKE '2024-%' GROUP BY month ORDER BY month ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "sql_103",
+    "question": "Which users have placed orders in more than 3 different months? Show the user's name and the number of distinct months they ordered in. Only include completed orders.",
+    "check": "result",
+    "difficulty": "hard",
+    "tags": [
+      "two-table-join",
+      "subquery",
+      "having",
+      "date-function"
+    ],
+    "gold_sql": "SELECT u.name, COUNT(DISTINCT substr(o.order_date, 1, 7)) AS month_count FROM users u JOIN orders o ON u.id = o.user_id WHERE o.status = 'completed' GROUP BY u.id, u.name HAVING COUNT(DISTINCT substr(o.order_date, 1, 7)) > 3 ORDER BY month_count DESC, u.name ASC",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "sql_023",
+    "question": "How many orders contain more than three different products?",
+    "check": "result",
+    "difficulty": "hard",
+    "tags": [
+      "having",
+      "distinct",
+      "subquery"
+    ],
+    "gold_sql": "SELECT COUNT(*) FROM (SELECT order_id FROM order_items GROUP BY order_id HAVING COUNT(DISTINCT product_id) > 3)",
+    "ordered": false,
+    "allow_empty": false
+  },
+  {
+    "id": "sql_115",
+    "question": "Which products have been ordered in every month of 2025? Show the product name and the number of distinct months in 2025 in which they were ordered. Only include completed orders.",
+    "check": "result",
+    "difficulty": "hard",
+    "tags": [
+      "join",
+      "filter",
+      "group by",
+      "having",
+      "date extraction",
+      "sorting"
+    ],
+    "gold_sql": "SELECT p.name, COUNT(DISTINCT substr(o.order_date, 1, 7)) AS months_ordered FROM products p JOIN order_items oi ON p.id = oi.product_id JOIN orders o ON oi.order_id = o.id WHERE o.status = 'completed' AND o.order_date LIKE '2025%' GROUP BY p.id, p.name HAVING COUNT(DISTINCT substr(o.order_date, 1, 7)) = 12 ORDER BY p.name ASC",
+    "ordered": false,
+    "allow_empty": false
+  }
+]

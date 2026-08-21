@@ -1,0 +1,13 @@
+httpx>=0.28
+python-dotenv>=1.0
+pydantic>=2.0
+numpy>=2.0
+langgraph>=1.0
+# Checkpoints on disk for the human-in-the-loop path. InMemorySaver does not
+# do: a paused run has to survive the process being killed.
+langgraph-checkpoint-sqlite>=2.0
+pytest>=8.0
+
+# The HTTP service
+fastapi>=0.115
+uvicorn>=0.30
