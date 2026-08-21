@@ -1,5 +1,7 @@
 # SQL Data Analysis Agent
 
+[![tests](https://github.com/Yomikoooo/sql-agent/actions/workflows/test.yml/badge.svg)](https://github.com/Yomikoooo/sql-agent/actions/workflows/test.yml)
+
 A data analysis agent written from scratch: it takes a question in English,
 writes SQL, runs it, and answers. No agent framework -- the loop, the tool
 calls and the context management are all hand-written.
