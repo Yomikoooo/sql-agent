@@ -156,7 +156,8 @@ TASKS = [
         # At LIMIT 5 rank 5 was tied (two products at 269), so the answer was
         # not unique. At 3 the top values are 290/289/276, with no tie.
         "question": "What are our three best-selling products by units sold? "
-                    "Show the product name and the units sold.",
+                    "Show the product name and the units sold. "
+                    "Include orders of every status.",
         "gold_sql": "SELECT p.name, SUM(oi.quantity) AS total_sold FROM order_items oi "
                     "JOIN products p ON oi.product_id = p.id GROUP BY p.id "
                     "ORDER BY total_sold DESC LIMIT 3",
@@ -195,7 +196,8 @@ TASKS = [
     {
         "id": "sql_016",
         "question": "What share of our total revenue does each product category account for? "
-                    "Show the category, its revenue, and its percentage of the total.",
+                    "Show the category, its revenue, and its percentage of the total. "
+                    "Include orders of every status.",
         "gold_sql": "SELECT p.category, "
                     "  ROUND(SUM(oi.quantity * oi.unit_price), 2) AS revenue, "
                     "  ROUND(100.0 * SUM(oi.quantity * oi.unit_price) / "
@@ -464,7 +466,7 @@ GENERATED_TASKS = [
         "question": "For each product category, what is the total revenue from completed orders? Show the category and the revenue, rounded to 2 decimal places.",
         "gold_sql": "SELECT p.category, ROUND(SUM(oi.unit_price * oi.quantity), 2) AS revenue FROM order_items oi JOIN orders o ON oi.order_id = o.id JOIN products p ON oi.product_id = p.id WHERE o.status = 'completed' GROUP BY p.category ORDER BY revenue DESC, p.category ASC",
         "difficulty": "medium",
-        "tags": ["join", "aggregation", "filter"],
+        "tags": ["join", "aggregation", "filter", "having", "money"],
         "ordered": False,
     },
     {
@@ -528,7 +530,7 @@ GENERATED_TASKS = [
         "question": "Show the names of the 3 products with the highest total revenue from completed orders. If two products have the same total revenue, list the one with the smaller product id first. Return the product name and the total revenue rounded to 2 decimal places.",
         "gold_sql": "SELECT p.name, ROUND(SUM(oi.unit_price * oi.quantity), 2) AS revenue FROM products p JOIN order_items oi ON p.id = oi.product_id JOIN orders o ON oi.order_id = o.id WHERE o.status = 'completed' GROUP BY p.id, p.name ORDER BY revenue DESC, p.id ASC LIMIT 3",
         "difficulty": "medium",
-        "tags": ["join", "aggregation", "limit", "sorting", "filter"],
+        "tags": ["join", "aggregation", "limit", "sorting", "filter", "tie-breaker"],
         "ordered": True,
     },
     {
@@ -660,14 +662,6 @@ GENERATED_TASKS = [
         "ordered": False,
     },
     {
-        "id": "sql_131",
-        "question": "What is the total revenue from completed orders for each product category? Show the category and the revenue rounded to 2 decimal places. Only include categories that have at least one completed order line item.",
-        "gold_sql": "SELECT p.category, ROUND(SUM(oi.quantity * oi.unit_price), 2) AS revenue FROM products p JOIN order_items oi ON p.id = oi.product_id JOIN orders o ON oi.order_id = o.id WHERE o.status = 'completed' GROUP BY p.category HAVING SUM(oi.quantity * oi.unit_price) > 0 ORDER BY revenue DESC, p.category ASC",
-        "difficulty": "medium",
-        "tags": ["join", "aggregation", "having", "money"],
-        "ordered": False,
-    },
-    {
         "id": "sql_132",
         "question": "Show the names of the 2 products with the highest number of distinct users who have ordered them in completed orders. If two products have the same number of distinct users, list the one with the smaller product id first. Return the product name and the count of distinct users.",
         "gold_sql": "SELECT p.name, COUNT(DISTINCT o.user_id) AS user_count FROM products p JOIN order_items oi ON p.id = oi.product_id JOIN orders o ON oi.order_id = o.id WHERE o.status = 'completed' GROUP BY p.id, p.name ORDER BY user_count DESC, p.id ASC LIMIT 2",
@@ -770,14 +764,6 @@ GENERATED_TASKS = [
         "difficulty": "easy",
         "tags": ["aggregation", "date filter", "status filter"],
         "ordered": False,
-    },
-    {
-        "id": "sql_145",
-        "question": "Show the names of the 3 products with the highest total revenue from completed orders. If two products have the same total revenue, list the one with the smaller product id first. Return product name and total revenue rounded to 2 decimal places.",
-        "gold_sql": "SELECT p.name, ROUND(SUM(oi.quantity * oi.unit_price), 2) AS revenue FROM products p JOIN order_items oi ON p.id = oi.product_id JOIN orders o ON oi.order_id = o.id WHERE o.status = 'completed' GROUP BY p.id, p.name ORDER BY revenue DESC, p.id ASC LIMIT 3",
-        "difficulty": "medium",
-        "tags": ["aggregation", "join", "limit", "tie-breaker"],
-        "ordered": True,
     },
     {
         "id": "sql_146",
@@ -939,7 +925,7 @@ TEST_TASKS = [
     },
     {
         "id": "test_517",
-        "question": "Show the product name and the number of distinct cities from which users have ordered that product, considering only completed orders. Only include products that have been.",
+        "question": "Show the product name and the number of distinct cities from which users have ordered that product, considering only completed orders. Only include products ordered from at least 2 different cities.",
         "gold_sql": "SELECT p.name, COUNT(DISTINCT u.city) AS city_count FROM products p JOIN order_items oi ON p.id = oi.product_id JOIN orders o ON oi.order_id = o.id JOIN users u ON o.user_id = u.id WHERE o.status = 'completed' GROUP BY p.id, p.name HAVING COUNT(DISTINCT u.city) >= 2 ORDER BY city_count DESC, p.id ASC",
         "difficulty": "hard",
         "tags": ["four-table-join", "aggregation", "having", "distinct", "order-by"],
