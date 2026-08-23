@@ -410,11 +410,27 @@ def main() -> None:
 
     CACHE.load()
 
-    if args.trials == 1:
-        print("--trials 1 cannot measure noise: temperature 0 is greedy "
-              "decoding, not a guarantee of run-to-run identity.\n"
-              "    Measured: 2.6% of dev tasks are still flaky at temperature "
-              "0. Concluding anything improved needs trials >= 3.")
+    # This message used to say "2.6% of dev tasks are still flaky at
+    # temperature 0, so concluding anything improved needs trials >= 3".
+    # Measured 2026-08-23 and it is not true at a fixed worker count: the same
+    # configuration rerun 11 hours later produced identical `passed`,
+    # `submitted_sql` and `input_tokens` on all 76 dev tasks (runs
+    # 2026-08-22T15-49-10 and 2026-08-23T02-34-16). At temperature 0 with
+    # --workers pinned, extra trials cost time and return the same rows.
+    #
+    # The 2.6% figure is not disproved as such -- it was never reproduced on
+    # this task set, and the suspicion is that it mixed worker counts, which
+    # do change results. So the warning now depends on temperature.
+    if args.temperature > 0 and args.trials == 1:
+        print(f"--trials 1 at temperature {args.temperature} cannot measure "
+              "noise: sampling makes runs differ.\n"
+              "    Use --trials 3 or more before calling any change an "
+              "improvement.")
+    elif args.temperature == 0 and args.trials > 1:
+        print(f"--trials {args.trials} at temperature 0 repeats identical "
+              "work: greedy decoding at a fixed --workers is bit-identical.\n"
+              "    Noise between *configurations* is measured with a placebo "
+              "arm, not with repeats.")
 
     # Different worker counts give different results, reproducibly so within
     # each count. Comparing across runs means matching this first.

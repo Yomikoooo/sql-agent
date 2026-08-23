@@ -89,6 +89,38 @@ SQL_ERROR_HINTS = {
     "plc_b": ("Check your query against the database schema for the exact table and "
               "column names that it defines, then fix the query and try it again. "
               "Be precise."),
+    # base with " against get_schema" deleted and nothing else touched. Added
+    # 2026-08-23, after the first four arms left a question they could not
+    # answer: base is the only short variant and it is also the only one that
+    # points at a forbidden tool, so "removing the contradiction" and "making
+    # the sentence longer" were still bundled together. inline/plc_a/plc_b are
+    # all ~150 characters; this one is 63, and it differs from base by exactly
+    # one idea. If it scores like base, the contradiction was free to remove.
+    "short": ("Check the table and column names, fix the query, and try again."),
+    # --- noise calibration, added 2026-08-24 -------------------------------
+    # Three rewrites of `base` that say the same thing: same instruction, same
+    # tool named, same order of operations, same length band. Only the surface
+    # form moves -- a clause fronted, a semicolon for a comma, one connective
+    # added.
+    #
+    # Why they exist: the first five arms scored 37 / 36 / 36 / 33 / 33, and no
+    # controlled variable explains that ordering. Task-level comparison found
+    # only 11 of 76 tasks flipping at all, with no pattern -- sql_023 passes
+    # under base and inline, the two most different arms, and fails under the
+    # three in between. Before reading anything into a 4-task gap, the spread
+    # produced by changes that carry no information at all has to be measured.
+    # Two placebo arms gave +-1 and that estimate was treated as the noise
+    # band; with five arms it looks too narrow.
+    #
+    # The spread across base + these three IS the wording noise band. If it is
+    # +-1, the -4 for short and inline is real. If it is +-3, the whole
+    # experiment is inside noise and that is the answer.
+    "noise_a": ("Against get_schema, check the table and column names, "
+                "fix the query, and try again."),
+    "noise_b": ("Check the table and column names against get_schema; "
+                "fix the query and try again."),
+    "noise_c": ("Check the table and column names against get_schema, "
+                "then fix the query and try again."),
 }
 # The three non-base variants are held to within 6 characters of each other
 # (153 / 149 / 147). Otherwise a win for inline could be read as "the location
