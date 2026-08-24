@@ -40,6 +40,10 @@ SAMPLE_ROWS = 2          # sample rows per table in the schema output
 #
 #    "raw"       real rows as they are. The default; matches every historical
 #                experiment, so do not change it
+#    "raw_alt"   the null treatment: real rows again, just the *next* ones
+#                (LIMIT n OFFSET n). Same information, different rows. The
+#                raw <-> raw_alt gap is the noise band for this dimension --
+#                without it, "synthetic costs 4 tasks" cannot be read
 #    "fenced"    prompt-level defence: wrapped in markers plus a statement that
 #                this is data, not instructions. Relies on the model complying
 #    "synthetic" architectural defence: no real rows at all, fabricated ones
@@ -52,7 +56,7 @@ SCHEMA_SAMPLE_MODE = os.getenv("SQLAGENT_SCHEMA_MODE", "raw")
 # A misspelled mode must raise rather than fall back to raw. Falling back
 # means believing you measured a defence when you measured its absence, and
 # the two produce identical-looking output.
-_VALID_SAMPLE_MODES = ("raw", "fenced", "synthetic")
+_VALID_SAMPLE_MODES = ("raw", "raw_alt", "fenced", "synthetic")
 if SCHEMA_SAMPLE_MODE not in _VALID_SAMPLE_MODES:
     raise ValueError(
         f"SQLAGENT_SCHEMA_MODE={SCHEMA_SAMPLE_MODE!r} is not valid; "
@@ -230,8 +234,27 @@ def _placeholder(col_type: str) -> object:
 
 
 def _sample_lines(conn, table: str, cols: list) -> list[str]:
-    """Place the sample rows according to SCHEMA_SAMPLE_MODE. The three
-    branches are the three arms of the comparison."""
+    """Place the sample rows according to SCHEMA_SAMPLE_MODE.
+
+    Each branch is one arm of the comparison. `raw_alt` is the odd one out: it
+    is not a defence, it is the null treatment. It shows real rows exactly like
+    `raw` -- same count, same date formats, same enum values, same magnitudes --
+    and differs only in *which* rows. So the disagreement between raw and
+    raw_alt is this dimension's own noise band, measured rather than borrowed.
+
+    Borrowing was the temptation worth naming: the 3..7 band measured on
+    2026-08-24 belongs to *error-hint wording*. Reusing it here would be
+    reading one ruler's marks off another.
+
+    Caveat, found while eyeballing the output: "same information" is an
+    idealisation. On this database raw shows two `completed` orders while
+    raw_alt happens to include a `cancelled` one, so the enum value the model
+    sees is not identical. That does not spoil the arm -- it widens it. The
+    band then covers both surface variation and the incidental cues that come
+    with whichever rows you happened to show, which is exactly the variation
+    `synthetic` has to beat before its gap means anything. Conservative in the
+    right direction; say so rather than claiming the arms are identical.
+    """
     if SCHEMA_SAMPLE_MODE == "synthetic":
         # Not one real row is read, so a payload has no path to the system
         # prompt. The price is that the model loses its cues about date
@@ -239,12 +262,23 @@ def _sample_lines(conn, table: str, cols: list) -> list[str]:
         fake = tuple(_placeholder(c[2]) for c in cols)
         return [f"  sample (synthetic placeholder, not real data): {fake}"]
 
-    rows = conn.execute(f"SELECT * FROM {table} LIMIT {SAMPLE_ROWS}").fetchall()
+    # raw_alt skips the first SAMPLE_ROWS rows and shows the next ones instead.
+    # A table with too few rows falls back to the same rows as raw, which would
+    # silently turn the null treatment into a duplicate of the control -- so
+    # the shortfall is reported rather than hidden.
+    offset = SAMPLE_ROWS if SCHEMA_SAMPLE_MODE == "raw_alt" else 0
+    rows = conn.execute(
+        f"SELECT * FROM {table} LIMIT {SAMPLE_ROWS} OFFSET {offset}").fetchall()
+    if SCHEMA_SAMPLE_MODE == "raw_alt" and len(rows) < SAMPLE_ROWS:
+        logger.warning(
+            "raw_alt: %s has fewer than %d rows past the offset (%d shown); "
+            "this table's sample is not fully distinct from raw",
+            table, SAMPLE_ROWS, len(rows))
     lines = [f"  sample: {row}" for row in rows]
 
     if SCHEMA_SAMPLE_MODE == "fenced":
         return ["  <data>", *lines, "  </data>"]
-    return lines                                   # "raw": unchanged behaviour
+    return lines                    # "raw" / "raw_alt": plain real rows
 
 
 def get_schema() -> ToolResult:

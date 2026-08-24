@@ -42,11 +42,21 @@ import itertools
 import json
 from pathlib import Path
 
-# The arms whose wording is informationally identical to base: same
-# instruction, same tool named, same order of operations, same length band.
-# Any disagreement between them is wording noise by construction, so their
-# pairwise range IS the band. See tools.py, SQL_ERROR_HINTS.
-NOISE_FAMILY = ("base", "noise_a", "noise_b", "noise_c")
+# Per dimension: which record field names the arm, and which arms are
+# informationally identical to each other. A family's pairwise range IS that
+# dimension's noise band -- measured, never borrowed from another dimension.
+#
+#   error_hint_variant   base + noise_a/b/c say the same thing: same
+#                        instruction, same tool named, same order, 81-86 chars.
+#                        See tools.py, SQL_ERROR_HINTS.
+#   schema_sample_mode   raw + raw_alt both show real rows, same count, same
+#                        formats -- only *which* rows differs. See tools.py,
+#                        _sample_lines.
+DIMENSIONS = {
+    "error_hint_variant": ("base", "noise_a", "noise_b", "noise_c"),
+    "schema_sample_mode": ("raw", "raw_alt"),
+}
+DEFAULT_FIELD = "error_hint_variant"
 
 # What a failing SQL tool result starts with. The hint is appended to exactly
 # these, so this prefix is how a run is known to have seen the hint at all.
@@ -60,7 +70,7 @@ def _tool_texts(messages: list[dict]):
             yield str(m.get("content", ""))
 
 
-def load(path: Path) -> tuple[str, dict[str, bool], set[str], dict]:
+def load(path: Path, field: str) -> tuple[str, dict[str, bool], set[str], dict]:
     """Return (arm, {task_id: passed}, tasks_that_saw_the_hint, meta).
 
     Trials are collapsed with all(): a task counts as a pass only if every
@@ -74,9 +84,16 @@ def load(path: Path) -> tuple[str, dict[str, bool], set[str], dict]:
         if not line.strip():
             continue
         rec = json.loads(line)
-        arms.add(rec.get("error_hint_variant", "?"))
+        if field not in rec:
+            # Older result files predate the field. Guessing "?" would merge
+            # every such run into one fake arm and quietly halve the counts.
+            raise SystemExit(
+                f"{path.name}: no {field!r} in the records. That run predates "
+                f"the field, so it cannot be placed on this dimension.")
+        arms.add(rec[field])
         meta = {k: rec.get(k) for k in ("workers", "temperature", "model",
-                                        "prompt_hash", "error_hint_hash")}
+                                        "prompt_hash", "error_hint_hash",
+                                        "schema_hash")}
         by_task.setdefault(rec["task_id"], []).append(bool(rec["passed"]))
         if any(t.startswith(SQL_ERROR_PREFIX)
                for t in _tool_texts(rec.get("messages", []))):
@@ -90,15 +107,21 @@ def load(path: Path) -> tuple[str, dict[str, bool], set[str], dict]:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("runs", nargs="+", type=Path)
-    ap.add_argument("--ref", default="base", help="arm to diff the others against")
+    ap.add_argument("--ref", help="arm to diff the others against "
+                                  "(default: the dimension's first family member)")
+    ap.add_argument("--field", default=DEFAULT_FIELD, choices=sorted(DIMENSIONS),
+                    help="which record field names the arm")
     args = ap.parse_args()
+    family_spec = DIMENSIONS[args.field]
+    if args.ref is None:
+        args.ref = family_spec[0]
 
     # Later files win, so re-running an arm replaces it rather than duplicating.
     arms: dict[str, dict[str, bool]] = {}
     seen: dict[str, set[str]] = {}
     metas: dict[str, dict] = {}
     for path in sorted(args.runs):
-        arm, results, exposed, meta = load(path)
+        arm, results, exposed, meta = load(path, args.field)
         if arm in arms and arms[arm] != results:
             print(f"note: {arm} rerun in {path.name} disagrees with the earlier "
                   f"run -- greedy decoding is supposed to be reproducible")
@@ -126,7 +149,7 @@ def main() -> None:
                 f"{len(ref)} -- is that run still in progress?")
 
     order = [args.ref] + sorted(a for a in arms if a != args.ref)
-    print(f"{len(tasks)} tasks   ref={args.ref}   "
+    print(f"{len(tasks)} tasks   dimension={args.field}   ref={args.ref}   "
           f"workers={metas[args.ref]['workers']} "
           f"temp={metas[args.ref]['temperature']} "
           f"model={metas[args.ref]['model']}\n")
@@ -177,15 +200,15 @@ def main() -> None:
     for a in order:
         print(f"{a:10}" + "".join(f"{disagree(a, b):>9}" for b in order))
 
-    family = [a for a in NOISE_FAMILY if a in arms]
+    family = [a for a in family_spec if a in arms]
     if len(family) < 2:
         print("\nnoise band: not enough of the noise family present to size it")
         return
     inner = [disagree(a, b) for a, b in itertools.combinations(family, 2)]
     lo, hi = min(inner), max(inner)
     print(f"\nnoise band over {family}: pairwise disagreement {lo}..{hi} tasks")
-    if len(family) < len(NOISE_FAMILY):
-        missing = [a for a in NOISE_FAMILY if a not in arms]
+    if len(family) < len(family_spec):
+        missing = [a for a in family_spec if a not in arms]
         print(f"  INCOMPLETE -- still to run: {', '.join(missing)}. "
               "The band can only widen, so any verdict below is provisional.")
     for arm in sorted(set(arms) - set(family)):

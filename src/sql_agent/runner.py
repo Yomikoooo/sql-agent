@@ -24,7 +24,8 @@ from statistics import mean
 from .agent import SYSTEM_PROMPT, run_agent
 from .cache import CACHE, ENABLED as CACHE_ON
 from .llm import resolve_url
-from .tools import SQL_ERROR_HINT, SQL_ERROR_HINT_VARIANT, TOOLS_SCHEMA
+from .tools import (SCHEMA_SAMPLE_MODE, SQL_ERROR_HINT, SQL_ERROR_HINT_VARIANT,
+                    TOOLS_SCHEMA, get_schema)
 from .redact import redact_record
 from .tracing import rollup, trace
 from .verify import verify_behavior, verify_sql
@@ -47,6 +48,9 @@ def _hash(text: str) -> str:
 
 
 PROMPT_HASH = _hash(SYSTEM_PROMPT)
+# The schema text on its own. PROMPT_HASH covers it, but it also covers every
+# other prompt edit, so it cannot answer "did the sample rows change".
+SCHEMA_HASH = _hash(get_schema().text)
 TOOLS_HASH = _hash(json.dumps(TOOLS_SCHEMA, sort_keys=True, ensure_ascii=False))
 
 # Worker count is a hidden independent variable, not a performance knob.
@@ -111,6 +115,13 @@ def run_one(task: dict, trial: int, model: str | None,
         # rather than hoping some other hash happens to include it.
         "error_hint_variant": SQL_ERROR_HINT_VARIANT,
         "error_hint_hash": _hash(SQL_ERROR_HINT),
+        # Same reasoning one line up, for the other environment-selected arm.
+        # prompt_hash does move when the mode does (raw -> 4d255eb1,
+        # synthetic -> 3d9416d6), so runs are already *distinguishable* -- but
+        # only by an opaque digest. Which mode produced a file has to be
+        # readable, not inferred, or a year-old result cannot be placed.
+        "schema_sample_mode": SCHEMA_SAMPLE_MODE,
+        "schema_hash": SCHEMA_HASH,
         # See the WORKERS note above: an independent variable, not a knob
         "workers": WORKERS,
         "temperature": temperature,
