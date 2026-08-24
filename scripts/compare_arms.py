@@ -52,9 +52,32 @@ from pathlib import Path
 #   schema_sample_mode   raw + raw_alt both show real rows, same count, same
 #                        formats -- only *which* rows differs. See tools.py,
 #                        _sample_lines.
+# `exposure` answers "could this run have been affected at all?", and it is
+# 🔴 dimension-specific. Getting this wrong is not a cosmetic slip: the first
+# version hardcoded the error-hint rule, so running --field schema_sample_mode
+# printed "the arms differ on which tasks ever saw the hint -- do not read the
+# band" over a perfectly valid comparison. The hint and the schema simply reach
+# the model through different doors.
+#
+#   error_hint_variant   the hint is appended only to a failing SQL tool
+#                        result, so a run with no SQL error never saw it.
+#                        Measured 36/76 on dev -- the other 40 tasks cannot be
+#                        moved by any rewording, and counting them in the rate
+#                        halves every effect.
+#   schema_sample_mode   get_schema() is spliced into SYSTEM_PROMPT
+#                        unconditionally (agent.py), so every run sees the
+#                        sample rows. Exposure is total, by construction.
 DIMENSIONS = {
-    "error_hint_variant": ("base", "noise_a", "noise_b", "noise_c"),
-    "schema_sample_mode": ("raw", "raw_alt"),
+    "error_hint_variant": {
+        "family": ("base", "noise_a", "noise_b", "noise_c"),
+        "exposure": "sql_error",
+        "what": "the error hint",
+    },
+    "schema_sample_mode": {
+        "family": ("raw", "raw_alt", "raw_alt2", "raw_alt3"),
+        "exposure": "always",
+        "what": "the schema sample rows",
+    },
 }
 DEFAULT_FIELD = "error_hint_variant"
 
@@ -70,7 +93,8 @@ def _tool_texts(messages: list[dict]):
             yield str(m.get("content", ""))
 
 
-def load(path: Path, field: str) -> tuple[str, dict[str, bool], set[str], dict]:
+def load(path: Path, field: str,
+         exposure: str) -> tuple[str, dict[str, bool], set[str], dict]:
     """Return (arm, {task_id: passed}, tasks_that_saw_the_hint, meta).
 
     Trials are collapsed with all(): a task counts as a pass only if every
@@ -95,8 +119,9 @@ def load(path: Path, field: str) -> tuple[str, dict[str, bool], set[str], dict]:
                                         "prompt_hash", "error_hint_hash",
                                         "schema_hash")}
         by_task.setdefault(rec["task_id"], []).append(bool(rec["passed"]))
-        if any(t.startswith(SQL_ERROR_PREFIX)
-               for t in _tool_texts(rec.get("messages", []))):
+        if exposure == "always" or any(
+                t.startswith(SQL_ERROR_PREFIX)
+                for t in _tool_texts(rec.get("messages", []))):
             exposed.add(rec["task_id"])
     if len(arms) != 1:
         raise SystemExit(f"{path.name}: mixed arms {sorted(arms)}; "
@@ -112,7 +137,8 @@ def main() -> None:
     ap.add_argument("--field", default=DEFAULT_FIELD, choices=sorted(DIMENSIONS),
                     help="which record field names the arm")
     args = ap.parse_args()
-    family_spec = DIMENSIONS[args.field]
+    dim = DIMENSIONS[args.field]
+    family_spec, exposure, what = dim["family"], dim["exposure"], dim["what"]
     if args.ref is None:
         args.ref = family_spec[0]
 
@@ -121,7 +147,7 @@ def main() -> None:
     seen: dict[str, set[str]] = {}
     metas: dict[str, dict] = {}
     for path in sorted(args.runs):
-        arm, results, exposed, meta = load(path, args.field)
+        arm, results, exposed, meta = load(path, args.field, exposure)
         if arm in arms and arms[arm] != results:
             print(f"note: {arm} rerun in {path.name} disagrees with the earlier "
                   f"run -- greedy decoding is supposed to be reproducible")
@@ -171,22 +197,23 @@ def main() -> None:
     exposures = [seen[a] for a in order]
     union = set().union(*exposures)
     identical = all(s == exposures[0] for s in exposures)
-    print(f"\nsaw the hint: {len(union)}/{len(tasks)} tasks"
+    print(f"\nsaw {what}: {len(union)}/{len(tasks)} tasks"
           f"   identical across arms: {identical}")
-    if not identical:
-        print("  WARNING: the arms differ on which tasks ever saw the hint. "
+    if not identical and exposure != "always":
+        print("  WARNING: the arms differ on which tasks were exposed. "
               "Effects are not comparable across a moving denominator.")
 
     unstable = [t for t in tasks if len({arms[a][t] for a in order}) > 1]
     stray = sorted(t for t in unstable if t not in union)
-    print(f"unstable: {len(unstable)}/{len(union)} of the tasks that saw it "
+    print(f"unstable: {len(unstable)}/{len(union)} of the exposed tasks "
           f"({len(unstable) / len(union):.0%})" if union else "")
     if stray:
         # At temperature 0 the hint is the only thing that differs between
         # arms, so a task that flips without ever seeing it means something
         # else is nondeterministic and the whole comparison is void.
-        print(f"  🔴 flipped WITHOUT ever seeing the hint: {stray}. "
-              "Something other than the wording is moving; do not read the band.")
+        print(f"  🔴 flipped WITHOUT exposure to {what}: {stray}. "
+              "Something other than the intervention is moving; "
+              "do not read the band.")
 
     print(f"\n{'task':10}" + "".join(f"{a[:8]:>9}" for a in order))
     for t in unstable:

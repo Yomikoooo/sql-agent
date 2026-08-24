@@ -38,25 +38,63 @@ SAMPLE_ROWS = 2          # sample rows per table in the schema output
 # in the whole chain. Whoever can write those rows can write into the system
 # prompt, and a real model was observed following instructions planted there.
 #
-#    "raw"       real rows as they are. The default; matches every historical
-#                experiment, so do not change it
-#    "raw_alt"   the null treatment: real rows again, just the *next* ones
-#                (LIMIT n OFFSET n). Same information, different rows. The
-#                raw <-> raw_alt gap is the noise band for this dimension --
-#                without it, "synthetic costs 4 tasks" cannot be read
+#    "raw"       real rows as they are. The default until 2026-08-24 and the
+#                footing of every experiment before that date -- run it to
+#                reproduce them
+#    "raw_alt"   the null treatment: real rows again, just the *next* ones.
+#    "raw_alt2"  Three of them (offset 2 / 4 / 6) so the family has four
+#    "raw_alt3"  members and six pairs -- the same strength as the error-hint
+#                family. Their pairwise spread IS this dimension's noise band;
+#                without it, "synthetic moves 14 tasks" cannot be read
 #    "fenced"    prompt-level defence: wrapped in markers plus a statement that
 #                this is data, not instructions. Relies on the model complying
 #    "synthetic" architectural defence: no real rows at all, fabricated ones
-#                instead. The payload has no path to reach the prompt
+#                instead. The payload has no path to reach the prompt.
+#                🔴 The default since 2026-08-24 -- see the block above
 #
 # An environment variable rather than a file edit, so two arms can run in
 # isolated subprocesses with no race.
-SCHEMA_SAMPLE_MODE = os.getenv("SQLAGENT_SCHEMA_MODE", "raw")
+# Default changed raw -> synthetic on 2026-08-24. This is a baseline change,
+# not a refactor; every absolute number from here on is on a different footing
+# than the ones before it. Running `raw` reproduces the old behaviour, and
+# `schema_sample_mode` + `schema_hash` are recorded in results so any file can
+# be placed.
+#
+#   - Why: with "raw", real database rows are spliced into SYSTEM_PROMPT --
+#     the most trusted position in the chain. Whoever can write a row can write
+#     into the system prompt, and a real model was observed obeying instructions
+#     planted there (5/5 hit rate with no defence, 0/5 with this one).
+#   - Why it is not a statistical claim: under "synthetic" the row-reading query
+#     is never executed. The payload has no path. That is verifiable by reading
+#     _sample_lines, not by trusting an eval.
+#   - Measured cost: none detectable. 35/76 vs 33/76 for raw, inside the
+#     33..36 spread of the four real-row arms themselves.
+#   - Known real cost, one task: the model can no longer see literal values, so
+#     it guesses their form. sql_002 asks about "electronics" (lowercase) while
+#     the column holds 'Electronics'; with the sample rows gone the model wrote
+#     the lowercase form and got 0 rows instead of 6.
+#   - Why that did not stop the change: exposure was measured, not assumed.
+#     Only 2 of 76 dev tasks need a literal that the question does not already
+#     spell correctly, and one of those fails under every mode anyway. An
+#     effect of <=2 tasks is far below this eval's ~10-task resolution.
+#   - Revisit if: the task set grows toward case-sensitive or enum-heavy
+#     filters. The fix would be to list distinct values for low-cardinality
+#     text columns -- schema metadata, not user data, so the injection path
+#     stays closed. Not built: at 2/76 it cannot pay for itself.
+SCHEMA_SAMPLE_MODE = os.getenv("SQLAGENT_SCHEMA_MODE", "synthetic")
 
 # A misspelled mode must raise rather than fall back to raw. Falling back
 # means believing you measured a defence when you measured its absence, and
 # the two produce identical-looking output.
-_VALID_SAMPLE_MODES = ("raw", "raw_alt", "fenced", "synthetic")
+# raw_alt / raw_alt2 / raw_alt3 differ only in which rows they show. Three of
+# them, not one, because a band estimated from a single pair is a single
+# observation: on the error-hint dimension the family's six pairs spanned
+# 3..7 tasks -- the largest was 2.3x the smallest. One pair cannot tell you
+# where in that spread it sits. This is the mistake experiment I made first
+# ("two placebos at -1 each, so the band is +-1") and it took five arms to
+# find out the band was much wider.
+_SAMPLE_OFFSETS = {"raw": 0, "raw_alt": 2, "raw_alt2": 4, "raw_alt3": 6}
+_VALID_SAMPLE_MODES = (*_SAMPLE_OFFSETS, "fenced", "synthetic")
 if SCHEMA_SAMPLE_MODE not in _VALID_SAMPLE_MODES:
     raise ValueError(
         f"SQLAGENT_SCHEMA_MODE={SCHEMA_SAMPLE_MODE!r} is not valid; "
@@ -266,14 +304,18 @@ def _sample_lines(conn, table: str, cols: list) -> list[str]:
     # A table with too few rows falls back to the same rows as raw, which would
     # silently turn the null treatment into a duplicate of the control -- so
     # the shortfall is reported rather than hidden.
-    offset = SAMPLE_ROWS if SCHEMA_SAMPLE_MODE == "raw_alt" else 0
+    offset = _SAMPLE_OFFSETS.get(SCHEMA_SAMPLE_MODE, 0)
     rows = conn.execute(
         f"SELECT * FROM {table} LIMIT {SAMPLE_ROWS} OFFSET {offset}").fetchall()
-    if SCHEMA_SAMPLE_MODE == "raw_alt" and len(rows) < SAMPLE_ROWS:
+    if offset and len(rows) < SAMPLE_ROWS:
+        # A short table silently turns a null-treatment arm into a duplicate of
+        # the control, which would report a noise band of 0 and make any effect
+        # look significant. Verified on the seeded db: the smallest table has
+        # 20 rows, so this never fires there -- it guards a future schema.
         logger.warning(
-            "raw_alt: %s has fewer than %d rows past the offset (%d shown); "
-            "this table's sample is not fully distinct from raw",
-            table, SAMPLE_ROWS, len(rows))
+            "%s: %s has fewer than %d rows past offset %d (%d shown); this "
+            "table's sample is not fully distinct from raw",
+            SCHEMA_SAMPLE_MODE, table, SAMPLE_ROWS, offset, len(rows))
     lines = [f"  sample: {row}" for row in rows]
 
     if SCHEMA_SAMPLE_MODE == "fenced":
