@@ -351,8 +351,19 @@ def print_report(s: dict, run_id: str) -> None:
           f"{s['n_records'] // max(s['n_tasks'], 1)} trials = {s['n_records']} runs")
     print("=" * 62)
     print(f"success rate        {s['success_rate']:.1%}")
-    print(f"flaky rate          {s['flaky_rate']:.1%}   "
-          f"<- noise floor: ignore gains smaller than this")
+    # With one trial per task, no task can disagree with itself, so flaky_rate
+    # is 0 by construction -- printing it as the noise floor states something
+    # false in the most prominent line of the report. It is also the wrong
+    # unit: the noise measured on 2026-08-24 is 3..7 *tasks* of pairwise
+    # disagreement between rewordings that carry the same information, not a
+    # difference of rates. See scripts/compare_arms.py.
+    trials = s["n_records"] // max(s["n_tasks"], 1)
+    if trials > 1:
+        print(f"flaky rate          {s['flaky_rate']:.1%}   "
+              f"<- same task, different verdicts across trials")
+    else:
+        print("flaky rate          n/a   <- 1 trial per task cannot measure it. "
+              "For wording noise use scripts/compare_arms.py")
     print(f"loose verdicts      {s['loose_count']}   <- spot-check these by hand")
     if s.get("truncated_runs"):
         print(f"truncated output   {s['truncated_runs']}   "
