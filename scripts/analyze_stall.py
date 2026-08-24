@@ -102,7 +102,13 @@ def analyze(path: Path) -> dict:
         if repeats:
             stats["stalled"] += 1
             stats["repeats"] += repeats
-    return {"variant": "/".join(sorted(variant)), **stats}
+    # Read every field through Counter.__getitem__, which returns 0 for a key
+    # that was never incremented. `{**stats}` would drop those keys entirely,
+    # and the caller would KeyError -- on the *cleanest* runs, the ones where
+    # nothing stalled and nothing hit the turn budget. noise_a was the first
+    # run with stop_reason {'done': 76} and it crashed the script.
+    FIELDS = ("runs", "stalled", "repeats", "max_turns", "no_sql")
+    return {"variant": "/".join(sorted(variant)), **{k: stats[k] for k in FIELDS}}
 
 
 def main(argv: list[str]) -> int:
