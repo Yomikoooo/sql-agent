@@ -1,0 +1,45 @@
+{
+  "baseline-31": {
+    "file": "2026-08-11T03-49-36.jsonl",
+    "n_published": 31,
+    "correct_published": 9,
+    "rate_published": 0.2903,
+    "flipped_by_ordering": [],
+    "excluded_empty_gold": [
+      "sql_030"
+    ],
+    "unchecked": [],
+    "n_corrected": 30,
+    "correct_corrected": 8,
+    "rate_corrected": 0.2667
+  },
+  "dev": {
+    "file": "2026-08-11T19-08-40.jsonl",
+    "n_published": 78,
+    "correct_published": 44,
+    "rate_published": 0.5641,
+    "flipped_by_ordering": [
+      "sql_117",
+      "sql_146"
+    ],
+    "excluded_empty_gold": [
+      "sql_030"
+    ],
+    "unchecked": [],
+    "n_corrected": 77,
+    "correct_corrected": 41,
+    "rate_corrected": 0.5325
+  },
+  "test": {
+    "file": "2026-08-11T21-37-22.jsonl",
+    "n_published": 24,
+    "correct_published": 10,
+    "rate_published": 0.4167,
+    "flipped_by_ordering": [],
+    "excluded_empty_gold": [],
+    "unchecked": [],
+    "n_corrected": 24,
+    "correct_corrected": 10,
+    "rate_corrected": 0.4167
+  }
+}
