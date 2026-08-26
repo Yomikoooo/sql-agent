@@ -15,30 +15,32 @@ along with the things that evaluation said that I did not want to hear.**
 
 | | Success rate | |
 |---|---|---|
-| `qwen2.5:3b` on **dev** (78 tasks, used over and over while tuning) | **53.2%** | not trustworthy, see below |
+| `qwen2.5:3b` on **dev** (78 tasks, used over and over while tuning) | **55.8%** | not trustworthy, see below |
 | `qwen2.5:3b` on **test** (24 tasks, never used for any decision) | **41.7%** | **the number worth quoting** |
 | `deepseek-chat` on dev | ~100% | a ceiling; it measures nothing |
 
 > **These numbers were corrected after publication.** Two grading defects
-> were found in the task set: six questions ask for a specific order but were
-> graded without one, and `sql_030`'s gold query returns no rows, so any
-> prediction returning nothing scored correct. Nothing was re-run —
-> `scripts/recount_published.py` applies the corrections to the SQL each run
-> actually submitted, and `results/published/` holds those records so the
-> numbers can be checked rather than taken on trust.
+> were found in the task set: three questions say "ordered alphabetically"
+> but were graded without an order, and `sql_030`'s gold query returns no
+> rows, so any prediction returning nothing scored correct — including, in
+> the run behind the published figure, a query with the wrong date bound.
 >
-> The dev figure fell from 56.4% to 53.2% and its task count was 78, not 76.
-> **The test figure did not move.** The three affected test questions had
-> failed for unrelated reasons, and one further defect — `test_506`'s
-> question text is truncated and its gold query filters on a condition the
-> text never states — turned out to change nothing, because that filter
-> removes no rows from this database.
+> Nothing was re-run. `scripts/recount_published.py` applies the corrections
+> to the SQL each run actually submitted, and `results/published/` holds
+> those records, so the numbers can be checked rather than taken on trust.
 >
-> That asymmetry is not luck. The number that moved is the one that was
-> tuned against; the one that held is the one nothing was allowed to touch.
+> The dev figure fell from 56.4% to **55.8%** and its task count was 78, not
+> 76. **The test figure did not move**: its three order-sensitive questions
+> had failed for unrelated reasons, two of them by producing no SQL at all.
+> A third suspected defect — `test_506`'s truncated question text and its
+> gold filter on a condition the text never states — changes nothing either,
+> because that filter removes no rows from this database.
+>
+> That asymmetry is not luck. The figure that moved is the one that was tuned
+> against; the one that held is the one nothing was allowed to touch.
 
 The starting point was 26.7%. Six rounds of prompt work took the dev set from
-26.7% to 53.2%, and every one of those rounds chose what to keep by looking at
+26.7% to 55.8%, and every one of those rounds chose what to keep by looking at
 the dev number.
 
 ⚠️ Those two figures are **not on the same task set**: the starting point was
@@ -49,9 +51,9 @@ that comparison and no recount removes it.
 On a held-out set of 24 tasks, locked from the day it was generated, the best
 configuration scored **4 points below the baseline**.
 
-**Those 11.5 points were overfitting.** It is measurable only because the test
+**Those 14.1 points were overfitting.** It is measurable only because the test
 set never took part in a single decision. Without it, the honest-sounding
-claim would have been "I improved the success rate from 26.7% to 53.2%", which
+claim would have been "I improved the success rate from 26.7% to 55.8%", which
 reads far better and is not true.
 
 This is the same phenomenon as overfitting in machine learning, with "training"

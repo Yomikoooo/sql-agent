@@ -45,10 +45,16 @@ RUNS = {
     "test": PUB / "2026-08-11T21-37-22.jsonl",
 }
 
-# Question text asks for an order and the gold query has ORDER BY, but the
-# task file says ordered: false.
-SHOULD_BE_ORDERED = {"sql_110", "sql_117", "sql_146",
-                     "test_513", "test_516", "test_521"}
+# Question text asks for an order in so many words -- all three say "ordered
+# alphabetically" -- and the gold query has ORDER BY, but the task file says
+# ordered: false.
+#
+# ⚠️ An earlier version of this set also held sql_110, sql_117 and sql_146.
+# They were found by a keyword search that matched "ordered by" in "ordered
+# by users from more than 2 different cities" -- which is about placing an
+# order, not about sorting. Those three ask for no ordering at all and their
+# unordered grading was correct. The list below was read, not matched.
+SHOULD_BE_ORDERED = {"test_513", "test_516", "test_521"}
 
 # Gold returns no rows, so returning nothing scores correct. Carries no
 # information either way; excluded from the denominator rather than deleted.

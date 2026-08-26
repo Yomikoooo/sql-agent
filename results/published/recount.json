@@ -18,17 +18,14 @@
     "n_published": 78,
     "correct_published": 44,
     "rate_published": 0.5641,
-    "flipped_by_ordering": [
-      "sql_117",
-      "sql_146"
-    ],
+    "flipped_by_ordering": [],
     "excluded_empty_gold": [
       "sql_030"
     ],
     "unchecked": [],
     "n_corrected": 77,
-    "correct_corrected": 41,
-    "rate_corrected": 0.5325
+    "correct_corrected": 43,
+    "rate_corrected": 0.5584
   },
   "test": {
     "file": "2026-08-11T21-37-22.jsonl",
