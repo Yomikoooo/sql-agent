@@ -1,4 +1,18 @@
 {
+  "config": {
+    "model": "qwen2.5:3b",
+    "temperature": null,
+    "workers": null,
+    "retriever": null,
+    "error_hint_variant": null,
+    "error_hint_hash": null,
+    "schema_sample_mode": null,
+    "schema_hash": null,
+    "prompt_hash": null,
+    "tools_hash": null,
+    "api_url": null
+  },
+  "config_mixed_within_run": [],
   "n_records": 76,
   "n_tasks": 76,
   "success_rate": 0.0,

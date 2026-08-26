@@ -1,4 +1,18 @@
 {
+  "config": {
+    "model": "mock-weak",
+    "temperature": null,
+    "workers": null,
+    "retriever": null,
+    "error_hint_variant": null,
+    "error_hint_hash": null,
+    "schema_sample_mode": null,
+    "schema_hash": null,
+    "prompt_hash": null,
+    "tools_hash": null,
+    "api_url": null
+  },
+  "config_mixed_within_run": [],
   "n_records": 31,
   "n_tasks": 31,
   "success_rate": 0.0,

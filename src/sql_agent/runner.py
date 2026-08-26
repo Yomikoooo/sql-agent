@@ -325,7 +325,35 @@ def summarize(records: list[dict]) -> dict:
         else:
             flaky.append(task_id)
 
+    # The arm identifiers, copied from the records onto the summary.
+    #
+    # 🔴 Why this is here and not only in the trajectory file: `results/*.jsonl`
+    # is gitignored (the messages hold database rows), so `*.summary.json` is
+    # the only thing that ships. It already carries always_pass/always_fail,
+    # which at one trial per task is the complete per-task result -- every
+    # task-level conclusion in this project can be recomputed from it. But
+    # until 2026-08-25 it carried no arm identifier at all, so a reader could
+    # recompute a comparison and still not know which arm each file was.
+    #
+    # That is the same defect that killed one arm of the retrieval experiment:
+    # the data survived, the configuration did not. Recording it beside the
+    # data is the whole fix.
+    cfg = records[0] if records else {}
+    config = {k: cfg.get(k) for k in (
+        "model", "temperature", "workers", "retriever",
+        "error_hint_variant", "error_hint_hash",
+        "schema_sample_mode", "schema_hash",
+        "prompt_hash", "tools_hash", "api_url",
+    )}
+    # An arm that varies inside one run is not an arm. Comparing such a file
+    # against another would be meaningless, so say so in the file itself
+    # rather than letting the first record speak for all of them.
+    mixed = sorted({k for k in config
+                    if len({r.get(k) for r in records}) > 1})
+
     return {
+        "config": config,
+        "config_mixed_within_run": mixed,
         "n_records": len(records),
         "n_tasks": len(by_task),
         "success_rate": _rate(records),

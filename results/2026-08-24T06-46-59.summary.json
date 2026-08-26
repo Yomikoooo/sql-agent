@@ -1,4 +1,18 @@
 {
+  "config": {
+    "model": "qwen2.5:3b",
+    "temperature": 0.0,
+    "workers": 4,
+    "retriever": null,
+    "error_hint_variant": "noise_a",
+    "error_hint_hash": "fedb4a6c",
+    "schema_sample_mode": null,
+    "schema_hash": null,
+    "prompt_hash": "4d255eb1",
+    "tools_hash": "7f4f79bd",
+    "api_url": "http://127.0.0.1:11434/v1/chat/completions"
+  },
+  "config_mixed_within_run": [],
   "n_records": 76,
   "n_tasks": 76,
   "success_rate": 0.4473684210526316,
