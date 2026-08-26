@@ -296,7 +296,19 @@ def _sample_lines(conn, table: str, cols: list) -> list[str]:
     if SCHEMA_SAMPLE_MODE == "synthetic":
         # Not one real row is read, so a payload has no path to the system
         # prompt. The price is that the model loses its cues about date
-        # formats, enum values and magnitudes; that cost is not yet measured.
+        # formats, enum values and magnitudes.
+        #
+        # That price was measured on 2026-08-24 and is why this mode is the
+        # default. Against the raw_alt family (the null treatment, band 5..9
+        # tasks) synthetic disagrees on 14/15/16/16 -- outside the band every
+        # time -- yet its net score, 35/76, sits inside the family's own 33..36.
+        # So: no measurable cost in the total, but 14 tasks swapped. The one
+        # cost with a known mechanism is sql_002, where the model no longer
+        # sees 'Electronics' and filters on 'electronics' instead, returning 0
+        # rows where 6 were wanted. Static analysis of every gold query puts
+        # the exposure at 2/76, well under this eval's ~10-task resolution --
+        # a measured cost against an architectural guarantee, so the trade is
+        # taken deliberately rather than by default.
         fake = tuple(_placeholder(c[2]) for c in cols)
         return [f"  sample (synthetic placeholder, not real data): {fake}"]
 
